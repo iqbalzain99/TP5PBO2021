@@ -29,6 +29,9 @@ public class Game extends Canvas implements Runnable{
     Window window;
     public static final int WIDTH = 800;
     public static final int HEIGHT = 600;
+    // counter Musuh
+    private int count = 0;
+    private int dir = 0;
     
     private int score = 0;
     private String username = "";
@@ -37,6 +40,8 @@ public class Game extends Canvas implements Runnable{
     private int timePoint = 0;
     private Thread thread;
     private boolean running = false;
+    private String lvl = "";
+    
     
     
     
@@ -49,18 +54,27 @@ public class Game extends Canvas implements Runnable{
     
     public STATE gameState = STATE.Game;
     
-    public Game(String uname, String mode){
+    public Game(String uname, String mode, String level){
         window = new Window(WIDTH, HEIGHT, "Modul praktikum 5", this);
         
         handler = new Handler();
-        
+        this.lvl = level;
+        if(this.lvl == "Easy"){
+            time = 20;
+        }
+        else if(this.lvl == "Normal"){
+            time = 10;
+        }
+        else if(this.lvl == "Hard"){
+            time = 5;
+        }
         this.addKeyListener(new KeyInput(handler, this));
         
         if(gameState == STATE.Game){
             handler.addObject(new Items(100,150, ID.Item));
             handler.addObject(new Items(200,350, ID.Item));
             handler.addObject(new Player(200,200, ID.Player));
-//            handler.addObject(new Player(400,400, ID.Enemy));
+            handler.addObject(new Player(400,400, ID.Enemy));
             if(mode == "MultiPlayer"){
                 handler.addObject(new Player(250,250, ID.Player2));
             }
@@ -137,6 +151,8 @@ public class Game extends Canvas implements Runnable{
         if(gameState == STATE.Game){
             GameObject playerObject = null;
             GameObject player2Object = null;
+            GameObject enemy = null;
+            
             for(int i=0;i< handler.object.size(); i++){
                 if(handler.object.get(i).getId() == ID.Player ){
                    playerObject = handler.object.get(i);
@@ -144,7 +160,59 @@ public class Game extends Canvas implements Runnable{
                 if(handler.object.get(i).getId() == ID.Player2 ){
                    player2Object = handler.object.get(i);
                 }
+                if(handler.object.get(i).getId() == ID.Enemy ){
+                   enemy = handler.object.get(i);
+                }
                 
+            }
+            if(enemy != null){
+                for(int i=0;i< handler.object.size() && time>0; i++){
+                    if(handler.object.get(i).getId() == ID.Item){
+                        if(playerObject != null){
+                            if(enemyCollision(playerObject , enemy)  ){
+                                time = 0;
+                                break;
+                            }
+                        }
+                        if(player2Object != null){
+                            if(enemyCollision(player2Object , enemy)  ){
+                                time = 0;
+                                break;
+                            }
+                        }
+                        System.out.println(count);
+                        if(dir == 0 ){
+                            if(this.lvl == "Easy"){
+                                enemy.setVel_y(-3);
+                            }
+                            else if(this.lvl == "Normal"){
+                                enemy.setVel_y(-5);
+                            }
+                            else if(this.lvl == "Hard"){
+                                enemy.setVel_y(-7);
+                            }
+                            
+                            
+                        }else if(dir == 1){
+                            if(this.lvl == "Easy"){
+                                enemy.setVel_y(+3);
+                            }
+                            else if(this.lvl == "Normal"){
+                                enemy.setVel_y(+5);
+                            }
+                            else if(this.lvl == "Hard"){
+                                enemy.setVel_y(+7);
+                            }
+                        }
+                        count ++;
+                        if(count > 100){
+                            count = 0;
+                            if(dir == 1) dir = 0;
+                            else dir = 1;
+                        }
+                        
+                    }
+                }
             }
             if(playerObject != null){
                 for(int i=0;i< handler.object.size(); i++){
@@ -175,6 +243,33 @@ public class Game extends Canvas implements Runnable{
                 }
             }
         }
+    }
+    
+    public static boolean enemyCollision(GameObject player, GameObject enemy){
+        boolean result = false;
+        
+        int sizePlayer = 50;
+        int sizeEnemy = 50;
+        
+        int playerLeft = player.x;
+        int playerRight = player.x + sizePlayer;
+        int playerTop = player.y;
+        int playerBottom = player.y + sizePlayer;
+        
+        int enemyLeft = enemy.x;
+        int enemyRight = enemy.x + sizeEnemy;
+        int enemyTop = enemy.y;
+        int enemyBottom = enemy.y + sizeEnemy;
+        
+        if((playerRight > enemyLeft ) &&
+        (playerLeft < enemyRight) &&
+        (enemyBottom > playerTop) &&
+        (enemyTop < playerBottom)
+        ){
+            result = true;
+        }
+        
+        return result;
     }
     
     public static boolean checkCollision(GameObject player, GameObject item){
